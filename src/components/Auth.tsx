@@ -1,30 +1,122 @@
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth, isValidDomain } from '../firebase';
 import '../styles/auth.css';
 
-const Auth = () => {
+// Replace with your Google Client ID
+const CLIENT_ID = '817764402920-mmufs4uu7r3s8ihsfn3qfgha5p3rcpkn.apps.googleusercontent.com';
+
+interface User {
+  email: string;
+  name: string;
+  picture: string;
+}
+
+// Custom hook for authentication
+export const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
+
+  const signOut = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    setUser(null);
+    // Optional: revoke Google access
+    if (window.google?.accounts.oauth2) {
+      window.google.accounts.oauth2.revoke(localStorage.getItem('auth_token') || '');
+    }
+  };
+
+  return { user, loading, setUser, signOut };
+};
+
+// Protected Route Component
+export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const handleGoogleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        hd: 'apkappa.it'
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return user ? <>{children}</> : null;
+};
+
+// Auth Component
+const Auth = () => {
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
+
+  useEffect(() => {
+    // Load the Google API Client
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+
+    script.onload = () => {
+      window.google?.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        context: 'signin'
       });
+
+      window.google?.accounts.id.renderButton(
+        document.getElementById('googleButton'),
+        { 
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          logo_alignment: 'center',
+          text: 'continue_with'
+        }
+      );
+    };
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  const handleCredentialResponse = async (response: any) => {
+    try {
+      // Decode the credential
+      const base64Url = response.credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(decodeURIComponent(escape(window.atob(base64))));
       
-      const result = await signInWithPopup(auth, provider);
-      const email = result.user.email;
-      
-      if (!email || !isValidDomain(email)) {
-        await auth.signOut();
+      if (payload.email?.endsWith('@apkappa.it')) {
+        const user = {
+          email: payload.email,
+          name: payload.name,
+          picture: payload.picture
+        };
+        
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('auth_token', response.credential);
+        setUser(user);
+        navigate('/');
+      } else {
         alert('È necessario utilizzare un account @apkappa.it');
-        return;
       }
-      
-      navigate('/');
-    } catch (error: any) {
-      console.error('Errore durante il login:', error);
+    } catch (error) {
+      console.error('Login failed:', error);
       alert('Errore durante il login. Assicurati di utilizzare un account @apkappa.it');
     }
   };
@@ -40,67 +132,11 @@ const Auth = () => {
         </div>
         
         <h1>Accedi al tuo account</h1>
-        <p className="signup-text">Non hai un account? <a href="#">Registrati</a></p>
+        <p className="signup-text">Accedi con il tuo account aziendale</p>
 
         <div className="social-buttons">
-          <button 
-            className="social-button"
-            onClick={handleGoogleLogin}
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #dadce0',
-              color: '#1f1f1f',
-              fontFamily: '"Google Sans", Roboto, Arial, sans-serif',
-              fontWeight: '500',
-              fontSize: '14px',
-              letterSpacing: '0.25px',
-              padding: '0 12px',
-              height: '40px',
-              minWidth: '100%',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 48 48">
-              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            </svg>
-            Continua con Google
-          </button>
+          <div id="googleButton"></div>
         </div>
-        
-        <div className="divider">oppure accedi con email</div>
-
-        <form id="loginForm">
-          <div className="form-group">
-            <label htmlFor="email">Indirizzo email</label>
-            <input 
-              type="email" 
-              id="email" 
-              required 
-              placeholder="nome@esempio.com"
-              autoComplete="email"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input 
-              type="password" 
-              id="password" 
-              required 
-              placeholder="Inserisci la tua password"
-              autoComplete="current-password"
-            />
-          </div>
-          <button type="submit" className="social-button">
-            Accedi
-          </button>
-        </form>
       </div>
       <div className="welcome-section">
         BENVENUTO IN<br/>INTERACTA ORGANIZER
