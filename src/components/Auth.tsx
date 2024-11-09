@@ -137,7 +137,7 @@ const Auth = () => {
       </div>
       <div className="w-1/2 bg-[#1e293b] text-white flex flex-col items-center justify-center p-8">
         <img 
-          src="/risorse/logo_io.png" 
+          src="/logo_io.png" 
           alt="Interacta Organizer Logo" 
           className="w-32 h-32 mb-8"
         />
