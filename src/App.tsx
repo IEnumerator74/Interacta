@@ -11,7 +11,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (user) {
       // Carica l'organizzazione dal file JSON quando l'utente è autenticato
-      fetch('/organization-structure06112024.json')
+      fetch('organization-structure06112024.json')
         .then(response => response.json())
         .then(importedSpaces => {
           const processedSpaces = importedSpaces.map((space: SpaceType) => ({
@@ -101,7 +101,7 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <img 
-                src="/logo_io.png" 
+                src="logo_io.png" 
                 alt="Interacta Logo" 
                 className="w-10 h-10 object-contain"
               />
