@@ -1,5 +1,4 @@
 import React, { useState, Dispatch, SetStateAction } from 'react';
-import { Users, Building, Laptop, Cog, Globe } from 'lucide-react';
 import { Space as SpaceType, Community, ExpandedSpaces, EditingCommunity, MoveModal as MoveModalType } from '../types/organization';
 import Space from './Space';
 import MoveModal from './MoveModal';
