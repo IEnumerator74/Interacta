@@ -130,13 +130,17 @@ const Auth = () => {
         </div>
         
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Accedi al tuo account</h1>
-        <p className="text-gray-600 mb-8">Accedi con il tuo account aziendale</p>
-
-        <div className="w-full max-w-sm">
+        <p className="text-gray-600 mb-4">Accedi con il tuo account aziendale</p> {/* Restored the text */}
+        <div className="w-full max-w-sm flex justify-center">
           <div id="googleButton"></div>
         </div>
       </div>
-      <div className="w-1/2 bg-[#1e293b] text-white flex items-center justify-center p-8">
+      <div className="w-1/2 bg-[#1e293b] text-white flex flex-col items-center justify-center p-8">
+        <img 
+          src="/risorse/logo_io.png" 
+          alt="Interacta Organizer Logo" 
+          className="w-32 h-32 mb-8"
+        />
         <h2 className="text-4xl font-bold text-center">
           BENVENUTO IN<br/>INTERACTA ORGANIZER
         </h2>

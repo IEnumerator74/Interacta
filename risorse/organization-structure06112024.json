@@ -1,0 +1,134 @@
+[
+  {
+    "id": "admin",
+    "icon": "admin",
+    "name": "Amministrazione e HR",
+    "color": "bg-blue-100",
+    "communities": [
+      {
+        "id": "1",
+        "name": "Comunicazioni HR"
+      },
+      {
+        "id": "2",
+        "name": "Richieste viaggi e trasferte"
+      },
+      {
+        "id": "3",
+        "name": "Richieste ferie/permessi"
+      },
+      {
+        "id": "4",
+        "name": "Documentazione amministrativa"
+      },
+      {
+        "id": "5",
+        "name": "Welfare aziendale"
+      }
+    ]
+  },
+  {
+    "id": "commercial",
+    "icon": "commercial",
+    "name": "Commerciale",
+    "color": "bg-green-100",
+    "communities": [
+      {
+        "id": "6",
+        "name": "Comunicazioni commerciali"
+      },
+      {
+        "id": "7",
+        "name": "Offerte progetto"
+      },
+      {
+        "id": "8",
+        "name": "Demo e POC (fattibilità progetti)"
+      },
+      {
+        "id": "9",
+        "name": "Segnalazioni clienti (proposta di Luca)"
+      },
+      {
+        "id": "10",
+        "name": "Opportunità commerciali"
+      }
+    ]
+  },
+  {
+    "id": "technical",
+    "icon": "technical",
+    "name": "Tecnico",
+    "color": "bg-yellow-100",
+    "communities": [
+      {
+        "id": "12",
+        "name": "Delivery"
+      },
+      {
+        "id": "13",
+        "name": "Assistenza e supporto"
+      },
+      {
+        "id": "14",
+        "name": "Sviluppo Software (community programmatori)"
+      },
+      {
+        "id": "15",
+        "name": "Documentazione tecnica"
+      }
+    ]
+  },
+  {
+    "id": "operations",
+    "icon": "operations",
+    "name": "Operations",
+    "color": "bg-purple-100",
+    "communities": [
+      {
+        "id": "16",
+        "name": "Ticket IT interni"
+      },
+      {
+        "id": "17",
+        "name": "Segnalazioni (guasti etc.)"
+      },
+      {
+        "id": "18",
+        "name": "Richieste acquisti"
+      },
+      {
+        "id": "19",
+        "name": "Asset aziendali (Inventario, scorte)"
+      }
+    ]
+  },
+  {
+    "id": "corporate",
+    "icon": "corporate",
+    "name": "Aziendale",
+    "color": "bg-red-100",
+    "communities": [
+      {
+        "id": "20",
+        "name": "Comunicazioni corporate (comunicati stampa etc.)"
+      },
+      {
+        "id": "21",
+        "name": "Eventi aziendali"
+      },
+      {
+        "id": "22",
+        "name": "Mercatomania (social)"
+      },
+      {
+        "id": "23",
+        "name": "Formazione"
+      },
+      {
+        "id": "24",
+        "name": "Certificazioni e compliance"
+      }
+    ]
+  }
+]
