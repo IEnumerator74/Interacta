@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/auth.css';
 
 // Replace with your Google Client ID
 const CLIENT_ID = '817764402920-mmufs4uu7r3s8ihsfn3qfgha5p3rcpkn.apps.googleusercontent.com';
@@ -15,6 +14,7 @@ interface User {
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -28,10 +28,10 @@ export const useAuth = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('auth_token');
     setUser(null);
-    // Revoke Google access using the defined types
     if (window.google?.accounts?.oauth2) {
       window.google.accounts.oauth2.revoke(localStorage.getItem('auth_token') || '');
     }
+    navigate('/login');
   };
 
   return { user, loading, setUser, signOut };
@@ -61,7 +61,6 @@ const Auth = () => {
   const { setUser } = useAuth();
 
   useEffect(() => {
-    // Load the Google API Client
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -96,7 +95,6 @@ const Auth = () => {
 
   const handleCredentialResponse = async (response: { credential: string }) => {
     try {
-      // Decode the credential
       const base64Url = response.credential.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(decodeURIComponent(escape(window.atob(base64))));
@@ -122,24 +120,26 @@ const Auth = () => {
   };
 
   return (
-    <div className="split-container">
-      <div className="login-section">
-        <div className="logo">
-          <svg viewBox="0 0 24 24">
+    <div className="flex min-h-screen">
+      <div className="w-1/2 p-8 flex flex-col items-center justify-center bg-white">
+        <div className="flex items-center gap-2 mb-8">
+          <svg viewBox="0 0 24 24" className="w-8 h-8">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#016BF8"/>
           </svg>
-          <span>Interacta Organizer</span>
+          <span className="text-xl font-semibold text-gray-800">Interacta Organizer</span>
         </div>
         
-        <h1>Accedi al tuo account</h1>
-        <p className="signup-text">Accedi con il tuo account aziendale</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Accedi al tuo account</h1>
+        <p className="text-gray-600 mb-8">Accedi con il tuo account aziendale</p>
 
-        <div className="social-buttons">
+        <div className="w-full max-w-sm">
           <div id="googleButton"></div>
         </div>
       </div>
-      <div className="welcome-section text-4xl">
-        BENVENUTO IN<br/>INTERACTA ORGANIZER
+      <div className="w-1/2 bg-[#1e293b] text-white flex items-center justify-center p-8">
+        <h2 className="text-4xl font-bold text-center">
+          BENVENUTO IN<br/>INTERACTA ORGANIZER
+        </h2>
       </div>
     </div>
   );

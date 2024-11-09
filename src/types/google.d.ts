@@ -1,8 +1,7 @@
-// types.d.ts
 interface Window {
   google?: {
-    accounts: {
-      id: {
+    accounts?: {
+      id?: {
         initialize: (config: {
           client_id: string;
           callback: (response: { credential: string }) => void;
@@ -11,21 +10,29 @@ interface Window {
         }) => void;
         renderButton: (
           element: HTMLElement | null,
-          options: {
-            type?: 'standard' | 'icon';
-            theme?: 'outline' | 'filled';
-            size?: 'large' | 'medium' | 'small';
+          config: {
+            type?: string;
+            theme?: string;
+            size?: string;
             text?: string;
-            shape?: string;
-            width?: number | string;
+            width?: string;
             logo_alignment?: string;
           }
         ) => void;
-        prompt: () => void;
       };
-      oauth2: {
-        revoke: (token: string, callback?: () => void) => void;
+      oauth2?: {
+        revoke: (token: string) => void;
       };
     };
   };
 }
+
+declare namespace Google {
+  interface User {
+    name: string;
+    email: string;
+    picture: string;
+  }
+}
+
+export {};
