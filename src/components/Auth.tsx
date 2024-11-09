@@ -138,7 +138,7 @@ const Auth = () => {
           <div id="googleButton"></div>
         </div>
       </div>
-      <div className="welcome-section">
+      <div className="welcome-section text-4xl">
         BENVENUTO IN<br/>INTERACTA ORGANIZER
       </div>
     </div>
