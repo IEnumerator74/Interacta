@@ -295,19 +295,19 @@ import React, { useState } from 'react';
             <div className="flex gap-3">
               <button
                 onClick={saveStructure}
-                className="flex items-center gap-2 px-4 py-2 border border-[#1e293b] text-[#1e293b] rounded hover:bg-gray-50"
+                className="flex items-center gap-2 px-4 h-10 border border-[#1e293b] text-[#1e293b] rounded hover:bg-gray-50"
               >
                 <Download className="w-4 h-4" />
                 Salva struttura
               </button>
-              <label className="flex items-center gap-2 px-4 py-2 border border-[#1e293b] text-[#1e293b] rounded hover:bg-gray-50 cursor-pointer">
+              <label className="flex items-center gap-2 px-4 h-10 border border-[#1e293b] text-[#1e293b] rounded hover:bg-gray-50 cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Importa struttura
                 <input type="file" accept=".json" onChange={importStructure} className="hidden" />
               </label>
               <button
                 onClick={addNewSpace}
-                className="flex items-center gap-2 px-4 py-2 bg-[#1e293b] text-white rounded hover:bg-[#334155]"
+                className="flex items-center gap-2 px-4 h-10 bg-[#1e293b] text-white rounded hover:bg-[#334155]"
               >
                 <Plus className="w-4 h-4" />
                 Nuovo spazio
