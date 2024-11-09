@@ -1,23 +1,118 @@
 <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <script>
-          (function() {
-            const path = localStorage.getItem('path');
-            if (path) {
-              localStorage.removeItem('path');
-              if (path !== window.location.pathname) {
-                window.history.replaceState(null, null, path);
-              }
-            }
-          })();
-        </script>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>APKAPPA Organization Structure</title>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script type="module" src="/src/main.tsx"></script>
-      </body>
-    </html>
+<html lang="en">
+ <head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <title>APKAPPA Organization Structure</title>
+   <script>
+     (function() {
+       // Gestione del reindirizzamento per mobile e desktop
+       const handleRedirect = () => {
+         // Se siamo su un percorso diverso dalla root e non abbiamo un hash
+         if (window.location.hash === '' && window.location.pathname !== '/Interacta/') {
+           const path = window.location.pathname;
+           const basePath = '/Interacta/';
+           
+           // Se il percorso inizia con il basePath, estrai la route
+           if (path.indexOf(basePath) === 0) {
+             const route = path.slice(basePath.length);
+             window.location.href = basePath + '#/' + route;
+           } else {
+             // Altrimenti reindirizza alla root con il path corrente come hash
+             window.location.href = basePath + '#' + path;
+           }
+         }
+         
+         // Gestione del reindirizzamento da 404.html
+         const savedPath = localStorage.getItem('path');
+         if (savedPath) {
+           localStorage.removeItem('path');
+           if (savedPath !== window.location.pathname) {
+             const normalizedPath = savedPath.startsWith('/Interacta') 
+               ? savedPath 
+               : '/Interacta' + savedPath;
+             window.history.replaceState(null, null, normalizedPath);
+           }
+         }
+       };
+
+       // Esegui il reindirizzamento
+       handleRedirect();
+
+       // Gestisci gli errori
+       window.onerror = function(msg, url, lineNo, columnNo, error) {
+         console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
+         return false;
+       };
+
+       // Disabilita il bounce effect su iOS
+       document.addEventListener('touchmove', function(e) {
+         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+           e.preventDefault();
+         }
+       }, { passive: false });
+     })();
+   </script>
+
+   <!-- Gestione della cache -->
+   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+   <meta http-equiv="Pragma" content="no-cache">
+   <meta http-equiv="Expires" content="0">
+   
+   <!-- Mobile web app capable -->
+   <meta name="mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+   
+   <!-- SEO e social media -->
+   <meta name="description" content="APKAPPA Organization Structure Application">
+   <meta name="theme-color" content="#ffffff">
+   
+   <!-- Previeni lo zoom su input in iOS -->
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   
+   <!-- Stili inline per il loader e gestione FOUC -->
+   <style>
+     body {
+       margin: 0;
+       padding: 0;
+       -webkit-font-smoothing: antialiased;
+       -moz-osx-font-smoothing: grayscale;
+     }
+     
+     #root {
+       height: 100vh;
+       width: 100vw;
+     }
+
+     /* Previeni il bounce su iOS */
+     html, body {
+       position: fixed;
+       width: 100%;
+       height: 100%;
+       overflow: hidden;
+     }
+
+     /* Stili per input su mobile */
+     input, select, textarea {
+       font-size: 16px !important; /* Previene lo zoom automatico su iOS */
+     }
+   </style>
+ </head>
+ <body>
+   <div id="root"></div>
+   <script type="module" src="/src/main.tsx"></script>
+
+   <!-- Gestione errori di runtime -->
+   <script>
+     window.addEventListener('error', function(e) {
+       console.error('Runtime error:', e.error);
+     });
+
+     // Gestione errori delle Promise non catturati
+     window.addEventListener('unhandledrejection', function(e) {
+       console.error('Unhandled promise rejection:', e.reason);
+     });
+   </script>
+ </body>
+</html>
