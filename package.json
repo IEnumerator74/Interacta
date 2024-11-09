@@ -3,10 +3,13 @@
       "private": true,
       "version": "0.0.0",
       "type": "module",
+      "homepage": "https://enumerator74.github.io/Interacta/",
       "scripts": {
             "dev": "vite",
             "build": "tsc && vite build",
-            "preview": "vite preview"
+            "preview": "vite preview",
+            "predeploy": "npm run build",
+            "deploy": "gh-pages -d dist"
       },
       "dependencies": {
             "firebase": "^11.0.1",
@@ -20,6 +23,7 @@
             "@types/react-dom": "^18.2.7",
             "@vitejs/plugin-react": "^4.0.3",
             "autoprefixer": "^10.4.14",
+            "gh-pages": "^6.1.1",
             "postcss": "^8.4.24",
             "tailwindcss": "^3.3.2",
             "typescript": "^5.0.2",
