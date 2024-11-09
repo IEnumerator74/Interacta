@@ -34,17 +34,6 @@ const OrganizationStructure: React.FC<OrganizationStructureProps> = ({ spaces, s
     moveCommunity(community.id, sourceSpaceId, targetSpaceId);
     setDraggedCommunity(null);
   };
-
-  const getIconById = (id: string) => {
-    switch (id) {
-      case 'admin': return <Users className="w-5 h-5" />;
-      case 'commercial': return <Building className="w-5 h-5" />;
-      case 'technical': return <Laptop className="w-5 h-5" />;
-      case 'operations': return <Cog className="w-5 h-5" />;
-      case 'corporate': return <Globe className="w-5 h-5" />;
-      default: return <Users className="w-5 h-5" />;
-    }
-  };
   
   const toggleSpace = (spaceId: string) => {
     setExpandedSpaces(prev => ({
