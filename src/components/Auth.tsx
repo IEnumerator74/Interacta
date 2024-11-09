@@ -28,9 +28,10 @@ export const useAuth = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('auth_token');
     setUser(null);
-    // Optional: revoke Google access
-    if (window.google?.accounts.oauth2) {
-      window.google.accounts.oauth2.revoke(localStorage.getItem('auth_token') || '');
+    // Optional: revoke Google access - check if google is defined before accessing and use type assertion
+    const google = window.google as { accounts?: { oauth2?: { revoke: (token: string) => void } } };
+    if (google?.accounts?.oauth2) {
+      google.accounts.oauth2.revoke(localStorage.getItem('auth_token') || '');
     }
   };
 
@@ -69,14 +70,16 @@ const Auth = () => {
     document.head.appendChild(script);
 
     script.onload = () => {
-      window.google?.accounts.id.initialize({
+      // Type assertion for google object - more specific
+      const google = window.google as { accounts?: { id?: { initialize: (config: any) => void; renderButton: (element: HTMLElement | null, options: any) => void } } };
+      google?.accounts?.id?.initialize({
         client_id: CLIENT_ID,
         callback: handleCredentialResponse,
         auto_select: false,
         context: 'signin'
       });
 
-      window.google?.accounts.id.renderButton(
+      google?.accounts?.id?.renderButton(
         document.getElementById('googleButton'),
         { 
           type: 'standard',
