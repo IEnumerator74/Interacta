@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Download, Upload, Plus, LogOut, Users, Building, Laptop, Cog, Globe } from 'lucide-react';
 import OrganizationStructure from './components/OrganizationStructure';
 import { useAuth } from './components/Auth';
-import { Space as SpaceType, Community } from './types/organization';
+import { Space as SpaceType } from './types/organization';
 import { FirebaseError } from 'firebase/app';
-import { collection, getDocs, query, getFirestore, collectionGroup, where, FirestoreError, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase';
 
@@ -48,10 +48,10 @@ const App: React.FC = () => {
           console.log('Iniziando il recupero degli spazi per utente:', user.email);
           const spacesCollection = collection(db, 'spaces');
           console.log('Collezione spaces riferimento ottenuto');
-          
+
           const spacesSnapshot = await getDocs(spacesCollection);
           console.log(`Snapshot ottenuto: ${spacesSnapshot.size} documenti trovati`);
-          
+
           if (spacesSnapshot.empty) {
             console.log('Nessun documento trovato nella collezione spaces');
             setSpaces([]);
@@ -73,7 +73,7 @@ const App: React.FC = () => {
 
             // Assicuriamoci che lo space abbia sempre un colore
             const color = data.color || DEFAULT_COLORS[doc.id as keyof typeof DEFAULT_COLORS] || 'bg-gray-100';
-            
+
             const space = {
               id: doc.id,
               name: data.name || 'Spazio senza nome',
@@ -82,16 +82,16 @@ const App: React.FC = () => {
               lastModifiedBy: data.lastModifiedBy || user.email || '',
               lastModifiedAt: data.lastModifiedAt ? new Date(data.lastModifiedAt.seconds * 1000) : new Date()
             };
-            
+
             console.log('Space completamente processato:', space);
             console.log('=== Fine processamento Space ===\n');
-            
+
             return space;
           });
-          
+
           const resolvedSpaces = await Promise.all(spacesList);
           console.log('\nTutti gli spazi prima della processazione finale:', resolvedSpaces);
-          
+
           const processedSpaces = resolvedSpaces.map((space: any) => ({
             ...space,
             icon: getIconById(space.id)
@@ -99,17 +99,17 @@ const App: React.FC = () => {
 
           console.log('Spazi elaborati con successo. Risultato finale:', processedSpaces);
           setSpaces(processedSpaces);
-        } catch (error: unknown) {
+        } catch (error: any) {
           let errorMessage = 'Errore sconosciuto durante il recupero della struttura organizzativa';
-          
-          if (error instanceof FirebaseError || error instanceof FirestoreError) {
+
+          if (error instanceof FirebaseError) {
             errorMessage = `Errore Firebase: ${error.code} - ${error.message}`;
             console.error('Errore Firebase dettagliato:', error);
           } else if (error instanceof Error) {
             errorMessage = error.message;
             console.error('Errore generico:', error);
           }
-          
+
           console.error('Errore durante il recupero degli spazi:', error);
           setError(errorMessage);
           setSpaces([]);
@@ -153,7 +153,7 @@ const App: React.FC = () => {
     reader.onload = async (e) => {
       try {
         const importedSpaces = JSON.parse(e.target?.result as string);
-        
+
         // Prima elimina tutti gli spazi esistenti
         const spacesCollection = collection(db, 'spaces');
         const spacesSnapshot = await getDocs(spacesCollection);
@@ -202,7 +202,7 @@ const App: React.FC = () => {
         }));
 
         setSpaces(processedSpaces);
-      } catch (error: unknown) {
+      } catch (error: any) {
         let errorMessage = "Errore sconosciuto durante l'importazione";
         if (error instanceof Error) {
           errorMessage = error.message;
@@ -266,9 +266,9 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <img 
-                src={import.meta.env.PROD ? '/Interacta/logo_io.png' : '/logo_io.png'} 
-                alt="Interacta Logo" 
+              <img
+                src={import.meta.env.PROD ? '/Interacta/logo_io.png' : '/logo_io.png'}
+                alt="Interacta Logo"
                 className="w-10 h-10 object-contain"
               />
               <h1 className="text-xl font-bold text-gray-900">
@@ -324,7 +324,7 @@ const App: React.FC = () => {
             {error}
           </div>
         )}
-        
+
         {loading ? (
           <div className="max-w-4xl mx-auto p-4 text-center">
             Caricamento struttura organizzativa...
