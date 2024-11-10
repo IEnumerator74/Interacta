@@ -23,4 +23,6 @@ export interface Space {
   name: string;
   color: string;
   communities: Community[];
+  lastModifiedBy: string;
+  lastModifiedAt: Date;
 }

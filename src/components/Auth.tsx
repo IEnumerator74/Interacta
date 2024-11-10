@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Bubbles from '../components/Bubbles/Bubbles';
+import Bubbles from './Bubbles/Bubbles';
+import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
 
 declare global {
   interface Window {
@@ -18,8 +20,7 @@ declare global {
   }
 }
 
-// Replace with your Google Client ID
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;  
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 interface User {
   email: string;
@@ -41,14 +42,16 @@ export const useAuth = () => {
     setLoading(false);
   }, []);
 
-  const signOut = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('auth_token');
-    setUser(null);
-    if (window.google?.accounts?.oauth2) {
-      window.google.accounts.oauth2.revoke(localStorage.getItem('auth_token') || '');
+  const signOut = async () => {
+    try {
+      await auth.signOut();
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error('Errore durante il logout:', error);
     }
-    navigate('/login');
   };
 
   return { user, loading, setUser, signOut };
@@ -75,39 +78,59 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
 const Auth = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   useEffect(() => {
+    console.log('Inizializzazione Auth component');
+    console.log('CLIENT_ID:', CLIENT_ID);
+
     const loadGoogleScript = () => {
+      console.log('Caricamento script Google');
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      script.onload = initializeGoogleSignIn;
+      script.onload = () => {
+        console.log('Script Google caricato con successo');
+        initializeGoogleSignIn();
+      };
+      script.onerror = (error) => {
+        console.error('Errore nel caricamento dello script Google:', error);
+      };
       document.head.appendChild(script);
 
       return script;
     };
 
     const initializeGoogleSignIn = () => {
+      console.log('Inizializzazione Google Sign-In');
       if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: CLIENT_ID,
-          callback: handleCredentialResponse,
-          auto_select: false,
-          context: 'signin'
-        });
+        try {
+          window.google.accounts.id.initialize({
+            client_id: CLIENT_ID,
+            callback: handleCredentialResponse,
+            auto_select: false,
+            context: 'signin',
+            hosted_domain: 'apkappa.it'
+          });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById('googleButton'),
-          {
-            type: 'standard',
-            theme: 'outline',
-            size: 'large',
-            width: '100%',
-            logo_alignment: 'center',
-            text: 'continue_with'
-          }
-        );
+          console.log('Rendering del pulsante Google');
+          window.google.accounts.id.renderButton(
+            document.getElementById('googleButton'),
+            {
+              type: 'standard',
+              theme: 'outline',
+              size: 'large',
+              width: 200,
+              text: 'continue_with'
+            }
+          );
+          console.log('Pulsante Google renderizzato con successo');
+        } catch (error) {
+          console.error('Errore durante l\'inizializzazione di Google Sign-In:', error);
+        }
+      } else {
+        console.error('Google Sign-In API non disponibile');
       }
     };
 
@@ -121,28 +144,53 @@ const Auth = () => {
   }, []);
 
   const handleCredentialResponse = async (response: { credential: string }) => {
+    console.log('Risposta credenziali ricevuta');
+    
+    if (isAuthenticating) {
+      console.log('Autenticazione già in corso, ignoro la richiesta');
+      return;
+    }
+    
     try {
+      setIsAuthenticating(true);
+      console.log('Inizio processo di autenticazione');
+      
       const base64Url = response.credential.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(decodeURIComponent(escape(window.atob(base64))));
+      
+      console.log('Email dell\'utente:', payload.email);
 
-      if (payload.email?.endsWith('@apkappa.it')) {
-        const user = {
-          email: payload.email,
-          name: payload.name,
-          picture: payload.picture
-        };
-
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('auth_token', response.credential);
-        setUser(user);
-        navigate('/');
-      } else {
-        alert('È necessario utilizzare un account @apkappa.it');
+      if (!payload.email?.endsWith('@apkappa.it')) {
+        throw new Error('È necessario utilizzare un account @apkappa.it');
       }
+
+      console.log('Creazione credenziale Firebase');
+      const credential = GoogleAuthProvider.credential(response.credential);
+      
+      console.log('Accesso a Firebase');
+      const userCredential = await signInWithCredential(auth, credential);
+      const firebaseUser = userCredential.user;
+
+      console.log('Ottenimento token Firebase');
+      const firebaseToken = await firebaseUser.getIdToken();
+
+      const user = {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture
+      };
+
+      console.log('Salvataggio dati utente');
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('auth_token', firebaseToken);
+      setUser(user);
+      navigate('/');
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Errore dettagliato durante il login:', error);
       alert('Errore durante il login. Assicurati di utilizzare un account @apkappa.it');
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -169,7 +217,7 @@ const Auth = () => {
           Accedi con il tuo account aziendale
         </p>
         <div className="w-full max-w-sm flex justify-center">
-          <div id="googleButton"></div>
+          <div id="googleButton" className="flex justify-center"></div>
         </div>
       </div>
 

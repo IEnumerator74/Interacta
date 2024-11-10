@@ -48,6 +48,16 @@ const Space: React.FC<SpaceProps> = ({
   onDrop,
   onDragStart,
 }) => {
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
   return (
     <div 
       className="border rounded-lg shadow-sm overflow-hidden"
@@ -80,15 +90,23 @@ const Space: React.FC<SpaceProps> = ({
               }}
             />
           ) : (
-            <span 
-              className="font-semibold text-gray-800 select-none"
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                onStartEditing(space.id, space.name);
-              }}
-            >
-              {space.name}
-            </span>
+            <div className="flex flex-col">
+              <span 
+                className="font-semibold text-gray-800 select-none"
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  onStartEditing(space.id, space.name);
+                }}
+              >
+                {space.name}
+              </span>
+              {isExpanded && (
+                <div className="text-xs text-gray-600 mt-1">
+                  <div>Ultima modifica: {formatDate(space.lastModifiedAt)}</div>
+                  <div>da: {space.lastModifiedBy}</div>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-2">

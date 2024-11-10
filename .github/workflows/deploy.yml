@@ -1,12 +1,11 @@
 name: Deploy to GitHub Pages
-
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'gh-pages']  # Aggiungiamo gh-pages ai trigger
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write    # Cambiato da 'read' a 'write' per permettere push su gh-pages
   pages: write
   id-token: write
 
@@ -36,8 +35,26 @@ jobs:
       - name: Build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: npm run build
 
+      # Aggiungiamo questi step per gestire gh-pages
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true    # Crea un branch pulito ogni volta
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy to GitHub Pages'
+
+      # Questi step sono per GitHub Pages
       - name: Setup Pages
         uses: actions/configure-pages@v3
 
