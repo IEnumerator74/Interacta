@@ -2,6 +2,8 @@ import React, { useState, Dispatch, SetStateAction } from 'react';
 import { Space as SpaceType, Community, ExpandedSpaces, EditingCommunity, MoveModal as MoveModalType } from '../types/organization';
 import Space from './Space';
 import MoveModal from './MoveModal';
+import { collection } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface OrganizationStructureProps {
   spaces: SpaceType[];
@@ -51,83 +53,108 @@ const OrganizationStructure: React.FC<OrganizationStructureProps> = ({ spaces, s
     setEditName(name);
   };
 
-  const saveSpaceName = (spaceId: string) => {
+  const saveSpaceName = async (spaceId: string) => {
     if (editName.trim() !== '') {
-      setSpaces(spaces.map(space => 
-        space.id === spaceId ? { ...space, name: editName } : space
-      ));
+      try {
+        const spacesRef = collection(db, 'spaces');
+        setSpaces(spaces.map(space => 
+          space.id === spaceId ? { ...space, name: editName } : space
+        ));
+      } catch (error) {
+        console.error('Errore durante il salvataggio dello spazio:', error);
+      }
     }
     setEditingSpace(null);
     setEditName('');
   };
 
-  const saveCommunityName = (spaceId: string, communityId: string) => {
+  const saveCommunityName = async (spaceId: string, communityId: string) => {
     if (editName.trim() !== '') {
-      setSpaces(spaces.map(space => 
-        space.id === spaceId 
-          ? {
-              ...space,
-              communities: space.communities.map(comm =>
-                comm.id === communityId ? { ...comm, name: editName } : comm
-              )
-            }
-          : space
-      ));
+      try {
+        setSpaces(spaces.map(space => 
+          space.id === spaceId 
+            ? {
+                ...space,
+                communities: space.communities.map(comm =>
+                  comm.id === communityId ? { ...comm, name: editName } : comm
+                )
+              }
+            : space
+        ));
+      } catch (error) {
+        console.error('Errore durante il salvataggio della community:', error);
+      }
     }
     setEditingCommunity(null);
     setEditName('');
   };
 
-  const addNewCommunity = (spaceId: string) => {
-    const newId = `new-${Date.now()}`;
-    setSpaces(spaces.map(space =>
-      space.id === spaceId
-        ? {
+  const addNewCommunity = async (spaceId: string) => {
+    try {
+      const newId = `new-${Date.now()}`;
+      setSpaces(spaces.map(space =>
+        space.id === spaceId
+          ? {
+              ...space,
+              communities: [...space.communities, { id: newId, name: 'Nuova community' }]
+            }
+          : space
+      ));
+    } catch (error) {
+      console.error('Errore durante l\'aggiunta della community:', error);
+    }
+  };
+
+  const deleteSpace = async (spaceId: string) => {
+    try {
+      setSpaces(spaces.filter(space => space.id !== spaceId));
+    } catch (error) {
+      console.error('Errore durante l\'eliminazione dello spazio:', error);
+    }
+  };
+
+  const deleteCommunity = async (spaceId: string, communityId: string) => {
+    try {
+      setSpaces(spaces.map(space =>
+        space.id === spaceId
+          ? {
+              ...space,
+              communities: space.communities.filter(comm => comm.id !== communityId)
+            }
+          : space
+      ));
+    } catch (error) {
+      console.error('Errore durante l\'eliminazione della community:', error);
+    }
+  };
+
+  const moveCommunity = async (communityId: string, fromSpaceId: string, toSpaceId: string) => {
+    try {
+      const fromSpace = spaces.find(s => s.id === fromSpaceId);
+      const community = fromSpace?.communities.find(c => c.id === communityId);
+      
+      if (!community) return;
+
+      setSpaces(spaces.map(space => {
+        if (space.id === fromSpaceId) {
+          return {
             ...space,
-            communities: [...space.communities, { id: newId, name: 'Nuova community' }]
-          }
-        : space
-    ));
-  };
-
-  const deleteSpace = (spaceId: string) => {
-    setSpaces(spaces.filter(space => space.id !== spaceId));
-  };
-
-  const deleteCommunity = (spaceId: string, communityId: string) => {
-    setSpaces(spaces.map(space =>
-      space.id === spaceId
-        ? {
+            communities: space.communities.filter(c => c.id !== communityId)
+          };
+        }
+        if (space.id === toSpaceId) {
+          return {
             ...space,
-            communities: space.communities.filter(comm => comm.id !== communityId)
-          }
-        : space
-    ));
-  };
+            communities: [...space.communities, community]
+          };
+        }
+        return space;
+      }));
 
-  const moveCommunity = (communityId: string, fromSpaceId: string, toSpaceId: string) => {
-    const fromSpace = spaces.find(s => s.id === fromSpaceId);
-    const community = fromSpace?.communities.find(c => c.id === communityId);
-    
-    if (!community) return;
-
-    setSpaces(spaces.map(space => {
-      if (space.id === fromSpaceId) {
-        return {
-          ...space,
-          communities: space.communities.filter(c => c.id !== communityId)
-        };
-      }
-      if (space.id === toSpaceId) {
-        return {
-          ...space,
-          communities: [...space.communities, community]
-        };
-      }
-      return space;
-    }));
-
-    setShowMoveModal(null);
+      setShowMoveModal(null);
+    } catch (error) {
+      console.error('Errore durante lo spostamento della community:', error);
+    }
   };
 
   return (

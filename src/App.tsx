@@ -2,35 +2,130 @@ import React, { useState, useEffect } from 'react';
 import { Download, Upload, Plus, LogOut, Users, Building, Laptop, Cog, Globe } from 'lucide-react';
 import OrganizationStructure from './components/OrganizationStructure';
 import { useAuth } from './components/Auth';
-import { Space as SpaceType } from './types/organization';
-//import Bubbles from './components/Bubbles/Bubbles'; // Aggiunto import per Bubbles
+import { Space as SpaceType, Community } from './types/organization';
+import { FirebaseError } from 'firebase/app';
+import { collection, getDocs, query, getFirestore, collectionGroup, where, FirestoreError } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from './firebase';
+
+const DEFAULT_COLORS = {
+  admin: 'bg-blue-100',
+  commercial: 'bg-green-100',
+  technical: 'bg-yellow-100',
+  operations: 'bg-purple-100',
+  corporate: 'bg-red-100'
+};
 
 const App: React.FC = () => {
   const { user, signOut } = useAuth();
   const [spaces, setSpaces] = useState<SpaceType[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      // Updated path for JSON in production
-      fetch(import.meta.env.PROD ? '/Interacta/organization-structure06112024.json' : '/organization-structure06112024.json')
-        .then(response => response.json())
-        .then(importedSpaces => {
-          const processedSpaces = importedSpaces.map((space: SpaceType) => ({
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setIsAuthenticated(!!firebaseUser);
+      if (!firebaseUser) {
+        setLoading(false);
+        return;
+      }
+
+      firebaseUser.getIdToken().then((token) => {
+        localStorage.setItem('auth_token', token);
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      const fetchSpaces = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          console.log('Iniziando il recupero degli spazi per utente:', user.email);
+          const spacesCollection = collection(db, 'spaces');
+          console.log('Collezione spaces riferimento ottenuto');
+          
+          const spacesSnapshot = await getDocs(spacesCollection);
+          console.log(`Snapshot ottenuto: ${spacesSnapshot.size} documenti trovati`);
+          
+          if (spacesSnapshot.empty) {
+            console.log('Nessun documento trovato nella collezione spaces');
+            setSpaces([]);
+            return;
+          }
+
+          const spacesList = spacesSnapshot.docs.map(async (doc) => {
+            const data = doc.data();
+            console.log(`\n=== Processando Space ID: ${doc.id} ===`);
+            console.log('Dati raw dello space:', data);
+
+            // Recupero delle communities dalla subcollection
+            const communitiesRef = collection(doc.ref, 'communities');
+            const communitiesSnapshot = await getDocs(communitiesRef);
+            const communities = communitiesSnapshot.docs.map(communityDoc => ({
+              id: communityDoc.id,
+              name: communityDoc.data().name || 'Community senza nome'
+            }));
+
+            // Assicuriamoci che lo space abbia sempre un colore
+            const color = data.color || DEFAULT_COLORS[doc.id as keyof typeof DEFAULT_COLORS] || 'bg-gray-100';
+            
+            const space = {
+              id: doc.id,
+              name: data.name || 'Spazio senza nome',
+              color,
+              communities
+            };
+            
+            console.log('Space completamente processato:', space);
+            console.log('=== Fine processamento Space ===\n');
+            
+            return space;
+          });
+          
+          const resolvedSpaces = await Promise.all(spacesList);
+          console.log('\nTutti gli spazi prima della processazione finale:', resolvedSpaces);
+          
+          const processedSpaces = resolvedSpaces.map((space: any) => ({
             ...space,
             icon: getIconById(space.id)
           }));
+
+          console.log('Spazi elaborati con successo. Risultato finale:', processedSpaces);
           setSpaces(processedSpaces);
-        })
-        .catch(error => {
-          console.error("Errore durante il caricamento della struttura organizzativa:", error);
-        });
+        } catch (error: unknown) {
+          let errorMessage = 'Errore sconosciuto durante il recupero della struttura organizzativa';
+          
+          if (error instanceof FirebaseError || error instanceof FirestoreError) {
+            errorMessage = `Errore Firebase: ${error.code} - ${error.message}`;
+            console.error('Errore Firebase dettagliato:', error);
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+            console.error('Errore generico:', error);
+          }
+          
+          console.error('Errore durante il recupero degli spazi:', error);
+          setError(errorMessage);
+          setSpaces([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchSpaces();
     }
-  }, [user]);
+  }, [user, isAuthenticated]);
 
   const saveStructure = () => {
+    // Rimuoviamo l'icona JSX prima del salvataggio
     const cleanedSpaces = spaces.map(space => ({
-      ...space,
-      icon: space.id,
+      id: space.id,
+      name: space.name,
+      color: space.color,
       communities: space.communities
     }));
 
@@ -54,13 +149,20 @@ const App: React.FC = () => {
     reader.onload = (e) => {
       try {
         const importedSpaces = JSON.parse(e.target?.result as string);
-        const processedSpaces = importedSpaces.map((space: SpaceType) => ({
+        const processedSpaces = importedSpaces.map((space: any) => ({
           ...space,
-          icon: getIconById(space.id)
+          icon: getIconById(space.id),
+          color: space.color || DEFAULT_COLORS[space.id as keyof typeof DEFAULT_COLORS] || 'bg-gray-100',
+          communities: Array.isArray(space.communities) ? space.communities : []
         }));
         setSpaces(processedSpaces);
-      } catch (error) {
+      } catch (error: unknown) {
+        let errorMessage = "Errore sconosciuto durante l'importazione";
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        }
         console.error("Errore durante l'importazione del file JSON:", error);
+        setError(errorMessage);
       }
     };
     reader.readAsText(file);
@@ -97,7 +199,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-     {/* <Bubbles />  */}
       <div className="fixed top-0 w-full bg-white shadow-sm z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -155,7 +256,19 @@ const App: React.FC = () => {
       </div>
 
       <main className="pt-20 pb-6">
-        <OrganizationStructure spaces={spaces} setSpaces={setSpaces} />
+        {error && (
+          <div className="max-w-4xl mx-auto mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+        
+        {loading ? (
+          <div className="max-w-4xl mx-auto p-4 text-center">
+            Caricamento struttura organizzativa...
+          </div>
+        ) : (
+          <OrganizationStructure spaces={spaces} setSpaces={setSpaces} />
+        )}
       </main>
     </div>
   );
