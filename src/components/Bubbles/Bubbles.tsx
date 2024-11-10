@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import useViewportSize from "../useViewportSize/useViewportSize";
+import useViewportSize from "../useViewPortSize/useViewportSize";
 import drawBubbles from "./drawBubbles";
 
 const Bubbles: React.FC = () => {
