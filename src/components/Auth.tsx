@@ -19,7 +19,7 @@ declare global {
 }
 
 // Replace with your Google Client ID
-const CLIENT_ID = '817764402920-mmufs4uu7r3s8ihsfn3qfgha5p3rcpkn.apps.googleusercontent.com';
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;  
 
 interface User {
   email: string;
