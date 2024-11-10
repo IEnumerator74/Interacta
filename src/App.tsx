@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Download, Upload, Plus, LogOut, Users, Building, Laptop, Cog, Globe } from 'lucide-react';
 import OrganizationStructure from './components/OrganizationStructure';
 import { useAuth } from './components/Auth';
-import { Space as SpaceType, Community } from './types/organization';
+import { Space } from './types/organization';
 import { FirebaseError } from 'firebase/app';
-import { collection, getDocs, query, getFirestore, collectionGroup, where, FirestoreError, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase';
 
@@ -18,7 +18,7 @@ const DEFAULT_COLORS = {
 
 const App: React.FC = () => {
   const { user, signOut } = useAuth();
-  const [spaces, setSpaces] = useState<SpaceType[]>([]);
+  const [spaces, setSpaces] = useState<Space[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -80,7 +80,8 @@ const App: React.FC = () => {
               color,
               communities,
               lastModifiedBy: data.lastModifiedBy || user.email || '',
-              lastModifiedAt: data.lastModifiedAt ? new Date(data.lastModifiedAt.seconds * 1000) : new Date()
+              lastModifiedAt: data.lastModifiedAt ? new Date(data.lastModifiedAt.seconds * 1000) : new Date(),
+              icon: getIconById(doc.id)
             };
             
             console.log('Space completamente processato:', space);
@@ -92,17 +93,17 @@ const App: React.FC = () => {
           const resolvedSpaces = await Promise.all(spacesList);
           console.log('\nTutti gli spazi prima della processazione finale:', resolvedSpaces);
           
-          const processedSpaces = resolvedSpaces.map((space: any) => ({
-            ...space,
-            icon: getIconById(space.id)
-          }));
+          // const processedSpaces = resolvedSpaces.map((space: any) => ({
+          //   ...space,
+          //   icon: getIconById(space.id)
+          // }));
 
-          console.log('Spazi elaborati con successo. Risultato finale:', processedSpaces);
-          setSpaces(processedSpaces);
+          console.log('Spazi elaborati con successo. Risultato finale:', resolvedSpaces);
+          setSpaces(resolvedSpaces);
         } catch (error: unknown) {
           let errorMessage = 'Errore sconosciuto durante il recupero della struttura organizzativa';
           
-          if (error instanceof FirebaseError || error instanceof FirestoreError) {
+          if (error instanceof FirebaseError) {
             errorMessage = `Errore Firebase: ${error.code} - ${error.message}`;
             console.error('Errore Firebase dettagliato:', error);
           } else if (error instanceof Error) {
@@ -234,7 +235,7 @@ const App: React.FC = () => {
     const RandomIcon = icons[Math.floor(Math.random() * icons.length)];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    const newSpace: SpaceType = {
+    const newSpace: Space = {
       id: newId,
       icon: <RandomIcon className="w-5 h-5" />,
       name: 'Nuovo spazio',
