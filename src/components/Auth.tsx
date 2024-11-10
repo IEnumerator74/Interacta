@@ -4,7 +4,7 @@ import Bubbles from '../components/Bubbles/Bubbles';
 
 declare global {
   interface Window {
-    google?: {
+    google: {
       accounts?: {
         id?: {
           initialize: (config: any) => void;

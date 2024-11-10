@@ -3,7 +3,7 @@ import { Download, Upload, Plus, LogOut, Users, Building, Laptop, Cog, Globe } f
 import OrganizationStructure from './components/OrganizationStructure';
 import { useAuth } from './components/Auth';
 import { Space as SpaceType } from './types/organization';
-import Bubbles from './components/Bubbles/Bubbles'; // Aggiunto import per Bubbles
+//import Bubbles from './components/Bubbles/Bubbles'; // Aggiunto import per Bubbles
 
 const App: React.FC = () => {
   const { user, signOut } = useAuth();
