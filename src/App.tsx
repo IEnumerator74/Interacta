@@ -4,7 +4,7 @@ import OrganizationStructure from './components/OrganizationStructure';
 import { useAuth } from './components/Auth';
 import { Space as SpaceType, Community } from './types/organization';
 import { FirebaseError } from 'firebase/app';
-import { collection, getDocs, query, getFirestore, collectionGroup, where, FirestoreError } from 'firebase/firestore';
+import { collection, getDocs, query, getFirestore, collectionGroup, where, FirestoreError, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './firebase';
 
@@ -78,7 +78,9 @@ const App: React.FC = () => {
               id: doc.id,
               name: data.name || 'Spazio senza nome',
               color,
-              communities
+              communities,
+              lastModifiedBy: data.lastModifiedBy || user.email || '',
+              lastModifiedAt: data.lastModifiedAt ? new Date(data.lastModifiedAt.seconds * 1000) : new Date()
             };
             
             console.log('Space completamente processato:', space);
@@ -126,7 +128,9 @@ const App: React.FC = () => {
       id: space.id,
       name: space.name,
       color: space.color,
-      communities: space.communities
+      communities: space.communities,
+      lastModifiedBy: space.lastModifiedBy,
+      lastModifiedAt: space.lastModifiedAt
     }));
 
     const fileContent = JSON.stringify(cleanedSpaces, null, 2);
@@ -141,20 +145,62 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const importStructure = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const importStructure = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !auth.currentUser) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const importedSpaces = JSON.parse(e.target?.result as string);
-        const processedSpaces = importedSpaces.map((space: any) => ({
-          ...space,
-          icon: getIconById(space.id),
-          color: space.color || DEFAULT_COLORS[space.id as keyof typeof DEFAULT_COLORS] || 'bg-gray-100',
-          communities: Array.isArray(space.communities) ? space.communities : []
+        
+        // Prima elimina tutti gli spazi esistenti
+        const spacesCollection = collection(db, 'spaces');
+        const spacesSnapshot = await getDocs(spacesCollection);
+        for (const doc of spacesSnapshot.docs) {
+          // Elimina tutte le communities dello spazio
+          const communitiesCollection = collection(db, 'spaces', doc.id, 'communities');
+          const communitiesSnapshot = await getDocs(communitiesCollection);
+          for (const communityDoc of communitiesSnapshot.docs) {
+            await deleteDoc(communityDoc.ref);
+          }
+          // Elimina lo spazio
+          await deleteDoc(doc.ref);
+        }
+
+        // Poi importa la nuova struttura
+        const processedSpaces = await Promise.all(importedSpaces.map(async (space: any) => {
+          const spaceData = {
+            name: space.name,
+            color: space.color || DEFAULT_COLORS[space.id as keyof typeof DEFAULT_COLORS] || 'bg-gray-100',
+            lastModifiedBy: auth.currentUser?.email || auth.currentUser?.uid || '',
+            lastModifiedAt: new Date()
+          };
+
+          // Crea il nuovo spazio
+          const spaceRef = doc(db, 'spaces', space.id);
+          await setDoc(spaceRef, spaceData);
+
+          // Crea le communities come subcollection
+          if (Array.isArray(space.communities)) {
+            for (const community of space.communities) {
+              const communityRef = doc(db, 'spaces', space.id, 'communities', community.id);
+              await setDoc(communityRef, {
+                name: community.name,
+                lastModifiedBy: auth.currentUser?.email || auth.currentUser?.uid || '',
+                lastModifiedAt: new Date()
+              });
+            }
+          }
+
+          return {
+            ...space,
+            icon: getIconById(space.id),
+            lastModifiedBy: auth.currentUser?.email || auth.currentUser?.uid || '',
+            lastModifiedAt: new Date()
+          };
         }));
+
         setSpaces(processedSpaces);
       } catch (error: unknown) {
         let errorMessage = "Errore sconosciuto durante l'importazione";
@@ -179,7 +225,9 @@ const App: React.FC = () => {
     }
   };
 
-  const addNewSpace = () => {
+  const addNewSpace = async () => {
+    if (!auth.currentUser) return;
+
     const newId = `space-${Date.now()}`;
     const icons = [Users, Building, Laptop, Cog, Globe];
     const colors = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-purple-100', 'bg-red-100'];
@@ -191,10 +239,25 @@ const App: React.FC = () => {
       icon: <RandomIcon className="w-5 h-5" />,
       name: 'Nuovo spazio',
       color: randomColor,
-      communities: []
+      communities: [],
+      lastModifiedBy: auth.currentUser.email || auth.currentUser.uid,
+      lastModifiedAt: new Date()
     };
 
-    setSpaces([...spaces, newSpace]);
+    try {
+      // Crea il nuovo spazio in Firestore
+      const spaceRef = doc(db, 'spaces', newId);
+      await setDoc(spaceRef, {
+        name: newSpace.name,
+        color: newSpace.color,
+        lastModifiedBy: newSpace.lastModifiedBy,
+        lastModifiedAt: newSpace.lastModifiedAt
+      });
+
+      setSpaces([...spaces, newSpace]);
+    } catch (error) {
+      console.error('Errore durante la creazione del nuovo spazio:', error);
+    }
   };
 
   return (
