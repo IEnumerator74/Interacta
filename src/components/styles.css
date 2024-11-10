@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+}
+
+html {
+  background-image: url("/chris-barbalis--nYBR0LFTvQ-unsplash.jpg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+body,
+html {
+  height: 100vh;
+}

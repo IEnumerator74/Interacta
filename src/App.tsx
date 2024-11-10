@@ -3,6 +3,7 @@ import { Download, Upload, Plus, LogOut, Users, Building, Laptop, Cog, Globe } f
 import OrganizationStructure from './components/OrganizationStructure';
 import { useAuth } from './components/Auth';
 import { Space as SpaceType } from './types/organization';
+import Bubbles from './components/Bubbles/Bubbles'; // Aggiunto import per Bubbles
 
 const App: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -96,6 +97,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+     {/* <Bubbles />  */}
       <div className="fixed top-0 w-full bg-white shadow-sm z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
